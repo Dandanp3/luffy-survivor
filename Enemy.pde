@@ -1,120 +1,129 @@
 class Enemy {
 
-  // Posição e tamanho 
   float x, y;
-  final float SIZE = 32;
+  float SIZE;
 
-  // Movimento 
-  float speedY;           // velocidade de descida (px/frame)
-  float trackStrength;    // 0..1 quanto segue o jogador horizontalmente
+  float speedY;
+  float trackStrength;
 
-  // HP 
-  int maxHP;
-  int currentHP;
+  int maxHP, currentHP;
+  boolean alive  = true;
+  boolean isBoss = false;
 
-  // Estado 
-  boolean alive = true;
-
-  // Visual 
-  color bodyColor  = color(40, 100, 220);   // azul
+  // Cores por tipo
+  color bodyColor;
   color hpBarFull  = color(50, 220, 80);
   color hpBarEmpty = color(180, 40, 40);
 
-  // Flash de dano 
   int   damageFlashTimer = 0;
-  final int FLASH_DURATION = 8;
+  final int FLASH_DUR    = 8;
 
-  // ID único para o HashSet de colisão 
-
-  Enemy(float startX, int hp, float spd, float track) {
-    x            = startX;
-    y            = -SIZE / 2;   // começa acima da tela
+  Enemy(float sx, int hp, float spd, float track, boolean boss) {
+    x            = sx;
+    y            = boss ? -40 : -20;
     maxHP        = hp;
     currentHP    = hp;
     speedY       = spd;
     trackStrength = track;
+    isBoss       = boss;
+
+    if (boss) {
+      SIZE      = 64;
+      bodyColor = color(120, 20, 160);  // roxo escuro
+    } else {
+      SIZE      = 32;
+      bodyColor = color(40, 100, 220);  // azul
+    }
   }
 
   void update(float playerX) {
-    // Descida vertical
     y += speedY;
-
-    // Tracking horizontal suave
-    float dx = playerX - x;
-    x += dx * trackStrength;
-
-    // dx dentro dos limites horizontais
-    x = constrain(x, SIZE / 2, SCREEN_W - SIZE / 2);
-
-    // Decrementa flash
+    x += (playerX - x) * trackStrength;
+    x = constrain(x, SIZE/2, SCREEN_W - SIZE/2);
     if (damageFlashTimer > 0) damageFlashTimer--;
   }
 
   void draw() {
     if (!alive) return;
 
-    // Sombra sutil
+    // Sombra
     fill(0, 0, 0, 60);
     noStroke();
     rectMode(CENTER);
-    rect(x + 3, y + 4, SIZE, SIZE, 3);
+    rect(x + 3, y + 4, SIZE, SIZE, isBoss ? 8 : 3);
 
-    // Corpo — pisca branco ao receber dano
-    color drawColor = (damageFlashTimer > 0 && damageFlashTimer % 3 < 2)
-                      ? color(255, 255, 255)
-                      : bodyColor;
-    fill(drawColor);
-    rect(x, y, SIZE, SIZE, 3);
+    // Corpo
+    color dc = (damageFlashTimer > 0 && damageFlashTimer % 3 < 2)
+               ? color(255, 255, 255) : bodyColor;
+    fill(dc);
+    rect(x, y, SIZE, SIZE, isBoss ? 8 : 3);
 
-    // Detalhe: "olhos" (dois pontos brancos)
-    fill(255, 255, 255, 180);
-    ellipse(x - 6, y - 5, 5, 5);
-    ellipse(x + 6, y - 5, 5, 5);
+    // Brilho nos olhos (boss tem olhos maiores e vermelhos)
+    if (isBoss) {
+      fill(220, 0, 0, 200);
+      ellipse(x - 12, y - 10, 10, 10);
+      ellipse(x + 12, y - 10, 10, 10);
+      // Coroa de boss
+      fill(255, 200, 0);
+      triangle(x - 20, y - SIZE/2,
+               x,      y - SIZE/2 - 14,
+               x + 20, y - SIZE/2);
+    } else {
+      fill(255, 255, 255, 180);
+      ellipse(x - 6, y - 5, 5, 5);
+      ellipse(x + 6, y - 5, 5, 5);
+    }
 
-    // Barra de HP 
-    if (currentHP < maxHP) drawHPBar();
-
+    // Barra de HP
+    drawHPBar();
     rectMode(CORNER);
   }
 
   void drawHPBar() {
-    float barW    = SIZE + 4;
-    float barH    = 5;
-    float barX    = x - barW / 2;
-    float barY    = y - SIZE / 2 - 10;
-    float fillW   = barW * ((float) currentHP / maxHP);
+    float barW  = SIZE + (isBoss ? 20 : 4);
+    float barH  = isBoss ? 8 : 5;
+    float barX  = x - barW/2;
+    float barY  = y - SIZE/2 - (isBoss ? 14 : 10);
+    float fillW = barW * ((float) currentHP / maxHP);
 
-    // Fundo
     fill(60, 60, 60);
     rect(barX, barY, barW, barH, 2);
 
-    // Preenchimento 
     float t = (float) currentHP / maxHP;
-    color barColor = lerpColor(hpBarEmpty, hpBarFull, t);
-    fill(barColor);
+    fill(lerpColor(hpBarEmpty, hpBarFull, t));
     rect(barX, barY, fillW, barH, 2);
+
+    // Label HP no boss
+    if (isBoss) {
+      fill(255);
+      textSize(10);
+      textAlign(CENTER, CENTER);
+      text(currentHP + " / " + maxHP, x, barY + barH/2);
+      textAlign(LEFT, BASELINE);
+    }
   }
 
+  //Aplica dano. Retorna true se morreu
   boolean takeDamage(int dmg) {
     if (!alive) return false;
     currentHP -= dmg;
-    damageFlashTimer = FLASH_DURATION;
-
+    damageFlashTimer = FLASH_DUR;
     if (currentHP <= 0) {
       currentHP = 0;
       alive     = false;
-      // Spawna partículas de morte
       spawnImpactParticles(x, y, bodyColor);
+      if (isBoss) {
+        // Explosão maior no boss
+        for (int i = 0; i < 3; i++)
+          spawnImpactParticles(x + random(-20,20), y + random(-20,20), bodyColor);
+        spawnFireParticles(x, y);
+      }
       return true;
     }
-    // Spawna partículas menores de hit
-    spawnImpactParticles(x, y, color(180, 200, 255));
+    spawnImpactParticles(x, y, isBoss ? color(180,100,220) : color(180,200,255));
     return false;
   }
 
-  boolean crossedLine() {
-    return y >= DEFENSE_LINE_Y;
-  }
-
-  boolean isAlive() { return alive; }
+  boolean crossedLine() { return y >= DEFENSE_LINE_Y; }
+  boolean isAlive()     { return alive; }
 }
