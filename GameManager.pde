@@ -132,9 +132,16 @@ class GameManager {
         if (arm != null && arm.isActive()) {
           if (arm.checkHit(e)) {
             boolean killed = e.takeDamage(luffyPlayer.getTotalDamage());
-            if (killed) { score += e.isBoss ? 100 * currentWave : 10 * currentWave; enemies.remove(i); }
+            if (killed) { score += e.isBoss ? 100 * currentWave : 10 * currentWave; enemies.remove(i); continue; }
           }
         }
+      }
+
+      // Remove inimigos mortos pelo Johnny (NailShot mata via takeDamage mas não remove da lista)
+      if (!e.isAlive()) {
+        score += e.isBoss ? 100 * currentWave : 10 * currentWave;
+        enemies.remove(i);
+        continue;
       }
     }
 

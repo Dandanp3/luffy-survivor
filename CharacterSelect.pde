@@ -1,8 +1,3 @@
-/**
- * CharacterSelect.pde
- * Tela de seleção entre Luffy e Johnny Joestar.
- * Cada card mostra o cubo do personagem + companion se houver.
- */
 class CharacterSelect {
 
   final float CARD_W = 260, CARD_H = 380;

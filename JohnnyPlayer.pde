@@ -1,14 +1,3 @@
-/**
- * JohnnyPlayer.pde — Johnny Joestar
- *
- * Aparência: cubo azul-acinzentado com estrelas (ref: roupa do Johnny)
- * Companion: TuskCompanion ao lado direito
- *
- * Upgrades disponíveis (gerenciados pelo GameManager):
- *   0 = Evoluir Tusk (+1 act, mais dano, troca visual)
- *   1 = Aumentar tempo de stun (+0.2s por upgrade)
- *   2 = Reduzir cooldown do tiro (-0.2s, mínimo 0.5s)
- */
 class JohnnyPlayer {
 
   final float W = 34, H = 34;

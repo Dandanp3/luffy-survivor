@@ -1,7 +1,3 @@
-/**
- * Enemy.pde — Inimigo normal e Boss
- * Suporta stun (girar 360 por X frames).
- */
 class Enemy {
 
   float x, y;

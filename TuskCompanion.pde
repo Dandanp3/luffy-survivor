@@ -1,17 +1,3 @@
-/**
- * TuskCompanion.pde — O Tusk ao lado do Johnny
- *
- * Fica no lado direito do Johnny como cubinho.
- * Muda de aparência com cada Act.
- * No Act 4: pode entrar em modo ULTIMATE (vontade de Gyro),
- *   saindo do lado do Johnny e atacando inimigos em barrage autônomo.
- *
- * Acts:
- *   1 = rosa pequeno, olhinhos, estrelas amarelas
- *   2 = rosa robótico com esferas azuis
- *   3 = rosa mecânico com garras e antena
- *   4 = rosa metálico grande com esporas/pingentes
- */
 class TuskCompanion {
 
   int act = 1;

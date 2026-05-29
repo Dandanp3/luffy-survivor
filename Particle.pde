@@ -1,12 +1,3 @@
-/**
- * ============================================================
- *  Particle.pde — Partículas de impacto e fogo
- *
- *  CONSTRUTOR: Particle(float x, float y, color c, boolean isFire)
- *  isFire = true  → sobe, muda de laranja para amarelo
- *  isFire = false → explode em todas as direções
- * ============================================================
- */
 class Particle {
 
   float x, y, vx, vy, size, alpha, alphaDecay, drag;

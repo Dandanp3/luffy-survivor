@@ -1,7 +1,3 @@
-/**
- * LuffyPlayer.pde — Luffy
- * Sons carregados via soundManager global.
- */
 class LuffyPlayer {
 
   final float W = 34, H = 34;

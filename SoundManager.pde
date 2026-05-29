@@ -1,8 +1,3 @@
-/**
- * SoundManager.pde
- * Carrega e expõe todos os sons do jogo.
- * Inicializado no setup() do sketch principal.
- */
 class SoundManager {
 
   SoundFile gomuSound;
