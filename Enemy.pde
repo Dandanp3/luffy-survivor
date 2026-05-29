@@ -1,3 +1,7 @@
+/**
+ * Enemy.pde — Inimigo normal e Boss
+ * Suporta stun (girar 360 por X frames).
+ */
 class Enemy {
 
   float x, y;
@@ -5,12 +9,12 @@ class Enemy {
 
   float speedY;
   float trackStrength;
+  float baseSpeedY;  // guarda velocidade original para restaurar após stun
 
   int maxHP, currentHP;
   boolean alive  = true;
   boolean isBoss = false;
 
-  // Cores por tipo
   color bodyColor;
   color hpBarFull  = color(50, 220, 80);
   color hpBarEmpty = color(180, 40, 40);
@@ -18,63 +22,105 @@ class Enemy {
   int   damageFlashTimer = 0;
   final int FLASH_DUR    = 8;
 
+  // Stun
+  float stunTimer  = 0;   // frames restantes de stun
+  float stunAngle  = 0;   // ângulo de rotação do cubo stunado
+
   Enemy(float sx, int hp, float spd, float track, boolean boss) {
-    x            = sx;
-    y            = boss ? -40 : -20;
-    maxHP        = hp;
-    currentHP    = hp;
-    speedY       = spd;
+    x             = sx;
+    y             = boss ? -40 : -20;
+    maxHP         = hp;
+    currentHP     = hp;
+    speedY        = spd;
+    baseSpeedY    = spd;
     trackStrength = track;
-    isBoss       = boss;
+    isBoss        = boss;
 
     if (boss) {
       SIZE      = 64;
-      bodyColor = color(120, 20, 160);  // roxo escuro
+      bodyColor = color(120, 20, 160);
     } else {
       SIZE      = 32;
-      bodyColor = color(40, 100, 220);  // azul
+      bodyColor = color(40, 100, 220);
     }
   }
 
   void update(float playerX) {
-    y += speedY;
-    x += (playerX - x) * trackStrength;
-    x = constrain(x, SIZE/2, SCREEN_W - SIZE/2);
+    // Stun: decrementa sempre dentro do update (não depende do player)
+    if (stunTimer > 0) {
+      stunTimer--;
+      stunAngle += 0.18;
+      // Stunado: desce em velocidade reduzida (evita ficar preso fora da tela)
+      y += baseSpeedY * 0.3;
+    } else {
+      y += baseSpeedY;
+      x += (playerX - x) * trackStrength;
+      x = constrain(x, SIZE/2, SCREEN_W - SIZE/2);
+    }
+
     if (damageFlashTimer > 0) damageFlashTimer--;
+  }
+
+  // Mantido por compatibilidade (não faz mais nada, update já cuida)
+  void updateStun() {}
+
+  void applyStun() {
+    // stunDuration vem do JohnnyPlayer, mas como Enemy não tem referência,
+    // o NailShot passa o valor ao chamar o método
+    applyStun(60);
+  }
+
+  void applyStun(float frames) {
+    stunTimer = frames;
+    stunAngle = 0;
   }
 
   void draw() {
     if (!alive) return;
 
+    pushMatrix();
+    translate(x, y);
+    if (stunTimer > 0) rotate(stunAngle);
+
     // Sombra
     fill(0, 0, 0, 60);
     noStroke();
     rectMode(CENTER);
-    rect(x + 3, y + 4, SIZE, SIZE, isBoss ? 8 : 3);
+    rect(3, 4, SIZE, SIZE, isBoss ? 8 : 3);
 
     // Corpo
     color dc = (damageFlashTimer > 0 && damageFlashTimer % 3 < 2)
-               ? color(255, 255, 255) : bodyColor;
+               ? color(255) : bodyColor;
     fill(dc);
-    rect(x, y, SIZE, SIZE, isBoss ? 8 : 3);
+    rect(0, 0, SIZE, SIZE, isBoss ? 8 : 3);
 
-    // Brilho nos olhos (boss tem olhos maiores e vermelhos)
+    // Olhos
     if (isBoss) {
       fill(220, 0, 0, 200);
-      ellipse(x - 12, y - 10, 10, 10);
-      ellipse(x + 12, y - 10, 10, 10);
-      // Coroa de boss
+      ellipse(-12, -10, 10, 10);
+      ellipse(12, -10, 10, 10);
       fill(255, 200, 0);
-      triangle(x - 20, y - SIZE/2,
-               x,      y - SIZE/2 - 14,
-               x + 20, y - SIZE/2);
+      // Coroa
+      triangle(-20, -SIZE/2, 0, -SIZE/2 - 14, 20, -SIZE/2);
     } else {
       fill(255, 255, 255, 180);
-      ellipse(x - 6, y - 5, 5, 5);
-      ellipse(x + 6, y - 5, 5, 5);
+      ellipse(-6, -5, 5, 5);
+      ellipse(6, -5, 5, 5);
     }
 
-    // Barra de HP
+    // Estrelinhas de stun girando acima
+    if (stunTimer > 0) {
+      float sr = SIZE/2 + 12;
+      fill(255, 230, 0);
+      for (int i = 0; i < 3; i++) {
+        float sa = stunAngle + i * TWO_PI / 3;
+        ellipse(cos(sa) * sr, sin(sa) * sr - SIZE/2 - 4, 7, 7);
+      }
+    }
+
+    popMatrix();
+
+    // Barra de HP (fora do pushMatrix para não rotacionar)
     drawHPBar();
     rectMode(CORNER);
   }
@@ -86,24 +132,22 @@ class Enemy {
     float barY  = y - SIZE/2 - (isBoss ? 14 : 10);
     float fillW = barW * ((float) currentHP / maxHP);
 
+    noStroke();
     fill(60, 60, 60);
+    rectMode(CORNER);
     rect(barX, barY, barW, barH, 2);
-
-    float t = (float) currentHP / maxHP;
-    fill(lerpColor(hpBarEmpty, hpBarFull, t));
+    fill(lerpColor(hpBarEmpty, hpBarFull, (float) currentHP / maxHP));
     rect(barX, barY, fillW, barH, 2);
 
-    // Label HP no boss
     if (isBoss) {
       fill(255);
       textSize(10);
       textAlign(CENTER, CENTER);
-      text(currentHP + " / " + maxHP, x, barY + barH/2);
+      text(currentHP + "/" + maxHP, x, barY + barH/2);
       textAlign(LEFT, BASELINE);
     }
   }
 
-  //Aplica dano. Retorna true se morreu
   boolean takeDamage(int dmg) {
     if (!alive) return false;
     currentHP -= dmg;
@@ -113,7 +157,6 @@ class Enemy {
       alive     = false;
       spawnImpactParticles(x, y, bodyColor);
       if (isBoss) {
-        // Explosão maior no boss
         for (int i = 0; i < 3; i++)
           spawnImpactParticles(x + random(-20,20), y + random(-20,20), bodyColor);
         spawnFireParticles(x, y);
@@ -126,4 +169,5 @@ class Enemy {
 
   boolean crossedLine() { return y >= DEFENSE_LINE_Y; }
   boolean isAlive()     { return alive; }
+  boolean isStunned()   { return stunTimer > 0; }
 }

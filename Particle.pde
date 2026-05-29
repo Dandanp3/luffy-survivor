@@ -1,9 +1,19 @@
+/**
+ * ============================================================
+ *  Particle.pde — Partículas de impacto e fogo
+ *
+ *  CONSTRUTOR: Particle(float x, float y, color c, boolean isFire)
+ *  isFire = true  → sobe, muda de laranja para amarelo
+ *  isFire = false → explode em todas as direções
+ * ============================================================
+ */
 class Particle {
 
   float x, y, vx, vy, size, alpha, alphaDecay, drag;
   color col;
   boolean isFire;
 
+  // ==========================================================
   Particle(float px, float py, color c, boolean fire) {
     this.x      = px;
     this.y      = py;
@@ -21,6 +31,7 @@ class Particle {
     drag       = fire ? random(0.88, 0.93) : random(0.92, 0.97);
   }
 
+  // ==========================================================
   void update() {
     x    += vx;
     y    += vy;
@@ -35,6 +46,7 @@ class Particle {
     }
   }
 
+  // ==========================================================
   void draw() {
     if (alpha <= 0) return;
     noStroke();
@@ -46,5 +58,6 @@ class Particle {
     }
   }
 
+  // ==========================================================
   boolean isDead() { return alpha <= 0 || size < 0.5; }
 }

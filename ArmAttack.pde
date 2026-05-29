@@ -1,3 +1,7 @@
+/**
+ * ArmAttack.pde — Braço elástico do Luffy
+ * Referencia LuffyPlayer em vez de Player genérico.
+ */
 class ArmAttack {
 
   static final int STRETCHING = 0;
@@ -5,36 +9,31 @@ class ArmAttack {
   static final int FINISHED   = 2;
   int phase = STRETCHING;
 
-  Player owner;
+  LuffyPlayer owner;
   boolean isLeft;
 
   final float ARM_W      = 18;
   final float MAX_LENGTH = 220;
   float currentLength    = 0;
 
-  // Velocidades — ajustadas dinamicamente pelo Gear 2
   float stretchSpeed;
   float retractSpeed;
 
-  // Guarda o estado dos poderes no momento do disparo
   boolean wasGear2;
   boolean wasHaki;
 
-  // Cor do braço — fixada no momento do disparo
   color armColor;
   color fistColor;
 
-  // Anti-hit duplo: lista de referências diretas
   ArrayList<Enemy> hitEnemies = new ArrayList<Enemy>();
 
-  ArmAttack(Player owner, boolean isLeft) {
+  ArmAttack(LuffyPlayer owner, boolean isLeft) {
     this.owner  = owner;
     this.isLeft = isLeft;
 
     wasGear2 = owner.gear2Active;
     wasHaki  = owner.hakiActive;
 
-    // Gear 2: socos bem mais rápidos
     stretchSpeed = wasGear2 ? 38 : 18;
     retractSpeed = wasGear2 ? 52 : 26;
 
@@ -70,43 +69,29 @@ class ArmAttack {
     float armX    = owner.x + offsetX;
     float armTopY = owner.y - currentLength;
 
-    // Glow / sombra
     color glowC = wasHaki ? color(0,0,0) : wasGear2 ? color(255,80,80) : color(255,204,153);
     for (int i = 3; i > 0; i--) {
       fill(red(glowC), green(glowC), blue(glowC), 25 * i);
-      noStroke();
-      rectMode(CORNER);
+      noStroke(); rectMode(CORNER);
       rect(armX - ARM_W/2 - i, armTopY - i, ARM_W + i*2, currentLength + i*2, 6);
     }
 
-    // Corpo do braço
-    fill(armColor);
-    noStroke();
-    rectMode(CORNER);
+    fill(armColor); noStroke(); rectMode(CORNER);
     rect(armX - ARM_W/2, armTopY, ARM_W, currentLength, 6);
 
-    // Punho
     fill(fistColor);
     float fs = ARM_W + 4;
     rectMode(CENTER);
     rect(armX, armTopY, fs, fs, 4);
 
-    // Anel de impacto no punho (Gear 2)
     if (wasGear2 && phase == STRETCHING && currentLength > MAX_LENGTH * 0.8) {
-      noFill();
-      stroke(255, 120, 50, 160);
-      strokeWeight(2);
-      ellipse(armX, armTopY, fs + 12, fs + 12);
-      noStroke();
+      noFill(); stroke(255, 120, 50, 160); strokeWeight(2);
+      ellipse(armX, armTopY, fs + 12, fs + 12); noStroke();
     }
 
-    // Label debug
-    fill(255, 255, 255, 60);
-    textSize(9);
-    textAlign(CENTER, CENTER);
+    fill(255, 255, 255, 60); textSize(9); textAlign(CENTER, CENTER);
     text(isLeft ? "L" : "R", armX, armTopY - 10);
-    rectMode(CORNER);
-    textAlign(LEFT, BASELINE);
+    rectMode(CORNER); textAlign(LEFT, BASELINE);
   }
 
   boolean checkHit(Enemy e) {
@@ -126,10 +111,7 @@ class ArmAttack {
 
     if (overlap) {
       hitEnemies.add(e);
-
-      // Partículas de fogo se Gear 2
       if (wasGear2) spawnFireParticles(e.x, e.y);
-
       return true;
     }
     return false;
